@@ -16,28 +16,40 @@ class Listener():
         self.my_socket.listen(1)
 
     def receive(self, timeout=1):
-        # Accept connections to my socket
-        self.my_connection, client_address = self.my_socket.accept()
+        while True:
+            # Accept connections to my socket
+            if None == self.my_connection:
+                self.my_connection, client_address = self.my_socket.accept()
 
-        # Receive data sent to us with a 1 second timeout
-        # TODO: Actually check the message length provided in the first 4 bytes
-        self.my_connection.settimeout(timeout)
-        received_data = b''
-        try:
-            while True:
-                received_data += self.my_connection.recv(1024)
-        except socket.timeout:
-            # Socket timed out, no more data
-            pass
-        
+            # Receive data sent to us
+            self.my_connection.settimeout(timeout)
+            received_data = b''
+            try:
+                # Get the header and set our expected length
+                count = 0
+                while len(received_data) < 4:
+                    received_data += self.my_connection.recv(1024)
+                    count += 1
+                    if count > 16:
+                        # The client has probably left us
+                        raise socket.timeout
+                expected_length = int.from_bytes(received_data[0:4],"big")
+                while len(received_data) - 4 < expected_length:
+                    # Keep receiving data until we get it all
+                    received_data += self.my_connection.recv(1024)
+                # We've got all the data, return it
+                break
+            except socket.timeout:
+                # Socket timed out, close the connection and move along
+                self.my_connection.close()
+                self.my_connection = None
+            
         return received_data
     
     def respond(self, data):
         # Send the data to the socket
         self.my_connection.send(data)
 
-        # Close the connection
-        self.my_connection.close()
-
     def __init__(self, filepath="/tmp/missilesilo"):
         self.filepath = filepath
+        self.my_connection = None

@@ -8,15 +8,20 @@ class Forwarder():
 
         my_socket.send(data)
 
-        # Receive data sent to us with a 1 second timeout
-        # TODO: Actually check the message length provided in the first 4 bytes
+        # Receive data sent to us
         my_socket.settimeout(timeout)
         received_data = b''
         try:
-            while True:
+            # Get the header and set our expected length
+            while len(received_data) < 4:
                 received_data += my_socket.recv(1024)
+            expected_length = int.from_bytes(received_data[0:4],"big")
+            while len(received_data) - 4 < expected_length:
+                # Keep receiving data until we get it all
+                received_data += my_socket.recv(1024)
+            # We've got all the data, return it
         except socket.timeout:
-            # Socket timed out, no more data
+            # Socket timed out, move along
             pass
         
         # Close the socket
