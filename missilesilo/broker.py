@@ -23,6 +23,3 @@ class Broker():
 
             # Forward the response to the listener
             listener.respond(response_data)
-
-    def __init__(self):
-        pass
