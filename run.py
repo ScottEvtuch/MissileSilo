@@ -1,4 +1,4 @@
 from missilesilo import broker
 
-broker = broker.Broker()
-broker.run()
+my_broker = broker.Broker()
+my_broker.run()
