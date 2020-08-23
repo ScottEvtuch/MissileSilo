@@ -1,13 +1,20 @@
 import os
 from missilesilo.listener import Listener 
 from missilesilo.forwarder import Forwarder
+from missilesilo.authenticator import Authenticator
 
 class Broker():
     def authenticate(self, query_data):
+        authenticator = Authenticator()
+
         # Do whatever we need to do to make sure this request is authorized
-        # TODO: Make this actually do something useful
-        response_data = self.forwarder.invoke(query_data)
-        print('Received data from ssh-agent')
+        if authenticator.authenticate(query_data):
+            # The authenticator has returned True, so passthrough the request
+            response_data = self.passthrough(query_data)
+        else:
+            # The authenticator has returned False, so return a failure response
+            response_data = self.failresponse()
+
         return response_data
 
     def passthrough(self, query_data):
